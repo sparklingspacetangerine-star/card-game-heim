@@ -1,6 +1,6 @@
 export type Rarity = 'ruby'|'diamond'|'gold'|'silver'|'bronze'|'wood'
 export type Card = {id:string; name:string; title:string; rarity:Rarity; image:string}
-export const RARITIES: {key:Rarity; label:string; color:string; chance:number; count:number}[] = [{key:'ruby',label:'Ruby',color:'#ef4444',chance:.5,count:1},{key:'diamond',label:'Diamond',color:'#67e8f9',chance:2,count:4},{key:'gold',label:'Gold',color:'#fbbf24',chance:7.5,count:6},{key:'silver',label:'Silver',color:'#cbd5e1',chance:15,count:6},{key:'bronze',label:'Bronze',color:'#c08457',chance:25,count:8},{key:'wood',label:'Wood',color:'#a16207',chance:50,count:26}]
+export const RARITIES: {key:Rarity; label:string; color:string; chance:number; count:number}[] = [{key:'ruby',label:'Рубиновая',color:'#ef4444',chance:.5,count:1},{key:'diamond',label:'Алмазная',color:'#67e8f9',chance:2,count:4},{key:'gold',label:'Золотая',color:'#fbbf24',chance:7.5,count:6},{key:'silver',label:'Серебряная',color:'#cbd5e1',chance:15,count:6},{key:'bronze',label:'Бронзовая',color:'#c08457',chance:25,count:8},{key:'wood',label:'Деревянная',color:'#a16207',chance:50,count:26}]
 const defs: Record<Rarity, Array<[string,string,string]>> = {
  ruby: [
   ["ruby-1","Провожающая в последний путь",""],

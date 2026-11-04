@@ -1,4 +1,4 @@
 import './globals.css'
 import type {Metadata} from 'next'
-export const metadata:Metadata={title:'Arcana — Card Collection',description:'A collectible card gacha'}
-export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>}
+export const metadata:Metadata={title:'Arcana — Коллекция карточек',description:'Коллекционная карточная гача'}
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="ru"><body>{children}</body></html>}
