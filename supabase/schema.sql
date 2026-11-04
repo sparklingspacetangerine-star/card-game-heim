@@ -44,3 +44,17 @@ as $$
 $$;
 revoke all on function public.get_my_profile() from public;
 grant execute on function public.get_my_profile() to authenticated;
+
+-- Campaign profile and master panel migration
+alter table public.profiles add column if not exists nickname text;
+alter table public.profiles add column if not exists bonus_spins integer not null default 0 check (bonus_spins >= 0);
+create unique index if not exists profiles_nickname_unique on public.profiles (lower(trim(nickname))) where nickname is not null;
+create table if not exists public.notifications (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id) on delete cascade, kind text not null, title text not null, body text not null, read_at timestamptz, created_at timestamptz not null default now());
+alter table public.notifications enable row level security;
+drop policy if exists "notifications own" on public.notifications;
+create policy "notifications own" on public.notifications for select using (user_id=auth.uid());
+create or replace function public.set_my_nickname(new_nickname text) returns public.profiles language plpgsql security definer set search_path=public as $$ declare n text:=regexp_replace(trim(new_nickname),'\\s+',' ','g'); p public.profiles; begin if n !~ '^[[:alnum:]А-Яа-яЁё _-]{3,24}$' then raise exception 'invalid nickname'; end if; if lower(n) in ('администратор','система','support','official','мастер') then raise exception 'reserved nickname'; end if; update public.profiles set nickname=n, username=n where id=auth.uid() returning * into p; if p is null then raise exception 'profile not found'; end if; return p; exception when unique_violation then raise exception 'nickname already used'; end; $$;
+create or replace function public.master_list_players() returns table(id uuid, nickname text, username text, role public.user_role, unique_cards bigint, gift_boosters integer, daily_pulls integer, bonus_spins integer) language sql security definer set search_path=public as $$ select p.id,coalesce(p.nickname,p.username,'Игрок'),p.username,p.role,(select count(*) from public.collections c where c.user_id=p.id and c.copies>0),p.gift_boosters,p.daily_pulls,p.bonus_spins from public.profiles p where public.is_master() order by lower(coalesce(p.nickname,p.username)); $$;
+create or replace function public.master_grant_spins(target_user uuid, amount integer) returns void language plpgsql security definer set search_path=public as $$ begin if not public.is_master() then raise exception 'master role required'; end if; if amount<1 or amount>1000 then raise exception 'invalid amount'; end if; update public.profiles set bonus_spins=bonus_spins+amount where id=target_user; insert into public.gift_log(master_id,player_id,reward_type,quantity) values(auth.uid(),target_user,'bonus_spins',amount); insert into public.notifications(user_id,kind,title,body) values(target_user,'reward','Дополнительные крутки','Мастер выдал вам '||amount||' бонусных круток.'); end; $$;
+revoke all on function public.set_my_nickname(text),public.master_list_players(),public.master_grant_spins(uuid,integer) from public;
+grant execute on function public.set_my_nickname(text),public.master_list_players(),public.master_grant_spins(uuid,integer) to authenticated;
