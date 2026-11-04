@@ -33,3 +33,14 @@ create or replace function public.master_grant_boosters(target_user uuid, amount
 create or replace function public.consume_gift_booster() returns public.profiles language plpgsql security definer set search_path=public as $$ declare p public.profiles; begin update public.profiles set gift_boosters=gift_boosters-1 where id=auth.uid() and gift_boosters>0 returning * into p; if p is null then raise exception 'no gift boosters'; end if; return p; end; $$;
 revoke all on function public.master_grant_card(uuid,text,integer), public.master_grant_boosters(uuid,integer), public.consume_gift_booster() from public;
 grant execute on function public.master_grant_card(uuid,text,integer), public.master_grant_boosters(uuid,integer), public.consume_gift_booster() to authenticated;
+
+create or replace function public.get_my_profile()
+returns public.profiles
+language sql
+security definer
+set search_path = public
+as $$
+  select * from public.profiles where id = auth.uid();
+$$;
+revoke all on function public.get_my_profile() from public;
+grant execute on function public.get_my_profile() to authenticated;
