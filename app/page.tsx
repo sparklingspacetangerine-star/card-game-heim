@@ -5,7 +5,7 @@ import {CARDS,RARITIES,State,draw,initialState,rarityLabel} from '../lib/game'
 import {supabase} from '../lib/supabase'
 import {Sparkles, Layers, Trophy, BarChart3, Search, RotateCcw, ChevronRight, Gem, Package, Clock3} from 'lucide-react'
 
-const key='arcana-state-v1'
+const key='arcana-state-v2'
 function CardVisual({card,полученные,onClick}:{card:any;полученные?:number;onClick?:()=>void}){const r=RARITIES.find(x=>x.key===card.rarity)!;return <button onClick={onClick} className="card" style={{'--accent':r.color} as any}><div className="card-glow"/><div className="card-top"><span className="rarity">{r.label}</span>{полученные? <span className="count">×{полученные}</span>:null}</div>{полученные ? <img className="card-art" src={`${BASE_PATH}${card.image}`} alt="" /> : <div className="sigil">?</div>}<strong>{полученные?card.name:'Неизвестная карта'}</strong><small>{полученные?(card.title||'Получена'):'Закрыта • Получите эту карту'}</small></button>}
 function formatRemaining(ms:number){const total=Math.max(0,Math.floor(ms/1000));const h=Math.floor(total/3600);const m=Math.floor((total%3600)/60);const sec=total%60;return `${String(h).padStart(2,'0')} ч ${String(m).padStart(2,'0')} мин ${String(sec).padStart(2,'0')} сек`}
 function ResultItem({card,onClick}:{card:any;onClick:()=>void}){return <button className="result" onClick={onClick} style={{'--accent':RARITIES.find(r=>r.key===card.rarity)?.color} as any}><img className="result-art" src={`${BASE_PATH}${card.image}`} alt=""/><div><b>{card.name}</b><span>{rarityLabel(card.rarity)} {card.guaranteed&&'• ГАРАНТИЯ'}</span></div></button>}
