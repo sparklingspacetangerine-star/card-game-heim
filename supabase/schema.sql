@@ -58,3 +58,7 @@ create or replace function public.master_list_players() returns table(id uuid, n
 create or replace function public.master_grant_spins(target_user uuid, amount integer) returns void language plpgsql security definer set search_path=public as $$ begin if not public.is_master() then raise exception 'master role required'; end if; if amount<1 or amount>1000 then raise exception 'invalid amount'; end if; update public.profiles set bonus_spins=bonus_spins+amount where id=target_user; insert into public.gift_log(master_id,player_id,reward_type,quantity) values(auth.uid(),target_user,'bonus_spins',amount); insert into public.notifications(user_id,kind,title,body) values(target_user,'reward','Дополнительные крутки','Мастер выдал вам '||amount||' бонусных круток.'); end; $$;
 revoke all on function public.set_my_nickname(text),public.master_list_players(),public.master_grant_spins(uuid,integer) from public;
 grant execute on function public.set_my_nickname(text),public.master_list_players(),public.master_grant_spins(uuid,integer) to authenticated;
+
+-- Allow bonus-spin rewards in the administrative audit log
+alter table public.gift_log drop constraint if exists gift_log_reward_type_check;
+alter table public.gift_log add constraint gift_log_reward_type_check check (reward_type in ('card','booster','bonus_spins'));
