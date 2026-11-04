@@ -72,3 +72,16 @@ create or replace function public.master_grant_boosters(target_user uuid,amount 
 create or replace function public.master_grant_spins(target_user uuid,amount integer) returns jsonb language plpgsql security definer set search_path=public as $$ declare new_total integer; op_id uuid; begin if not public.is_master() then raise exception 'master role required'; end if; if amount<1 or amount>1000 then raise exception 'invalid amount'; end if; update public.profiles set bonus_spins=bonus_spins+amount where id=target_user returning bonus_spins into new_total; if not found then raise exception 'recipient not found'; end if; insert into public.gift_log(master_id,player_id,reward_type,quantity) values(auth.uid(),target_user,'bonus_spins',amount) returning id into op_id; insert into public.notifications(user_id,kind,title,body) values(target_user,'reward','Дополнительные крутки!', 'Вы получили бонусных круток: '||amount||'.'); return jsonb_build_object('status','completed','operation_id',op_id,'recipient_id',target_user,'reward_type','bonus_spins','quantity',amount,'balance',new_total); end; $$;
 revoke all on function public.master_grant_card(uuid,text,integer),public.master_grant_boosters(uuid,integer),public.master_grant_spins(uuid,integer) from public;
 grant execute on function public.master_grant_card(uuid,text,integer),public.master_grant_boosters(uuid,integer),public.master_grant_spins(uuid,integer) to authenticated;
+
+create or replace function public.get_my_collection()
+returns table(card_id text, copies integer)
+language sql
+security definer
+set search_path = public
+as $$
+  select c.card_id, c.copies
+  from public.collections c
+  where c.user_id = auth.uid();
+$$;
+revoke all on function public.get_my_collection() from public;
+grant execute on function public.get_my_collection() to authenticated;
