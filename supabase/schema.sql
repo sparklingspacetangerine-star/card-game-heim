@@ -85,3 +85,21 @@ as $$
 $$;
 revoke all on function public.get_my_collection() from public;
 grant execute on function public.get_my_collection() to authenticated;
+
+create or replace function public.consume_any_pulls(amount integer)
+returns public.profiles
+language plpgsql security definer set search_path=public
+as $$
+declare p public.profiles; daily_take integer; bonus_take integer; remaining integer;
+begin
+ if amount<1 or amount>5 then raise exception 'invalid pull amount'; end if;
+ select * into p from public.profiles where id=auth.uid() for update;
+ if p is null then raise exception 'profile not found'; end if;
+ if p.pulls_reset_at<=now() then update public.profiles set daily_pulls=5,pulls_reset_at=now()+interval '24 hours' where id=auth.uid() returning * into p; end if;
+ if p.daily_pulls+p.bonus_spins<amount then raise exception 'not enough pulls'; end if;
+ daily_take:=least(p.daily_pulls,amount); remaining:=amount-daily_take; bonus_take:=remaining;
+ update public.profiles set daily_pulls=daily_pulls-daily_take, bonus_spins=bonus_spins-bonus_take where id=auth.uid() returning * into p;
+ return p;
+end; $$;
+revoke all on function public.consume_any_pulls(integer) from public;
+grant execute on function public.consume_any_pulls(integer) to authenticated;
